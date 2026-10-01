@@ -8,6 +8,7 @@ This project collects GitHub repository data, processes it with a data pipeline,
 
 ## Architecture
 
+```mermaid
 flowchart TD
     A[GitHub API] --> B[Raw JSON]
     B --> C[ETL]
@@ -32,6 +33,7 @@ flowchart TD
 
     K -->|No| P[Final Answer]
     P --> Q[FastAPI]
+```
 
 ## Features
 
