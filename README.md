@@ -22,16 +22,19 @@ flowchart TD
     I --> J[Agent Node]
     J --> K{Tool Needed?}
 
-    K -->|Yes| L[Tools]
-    L --> M[search_rag]
-    L --> N[get_project_details]
-    L --> O[fetch_github_projects]
+    K -->|Yes| L
+    K -->|No| P[Final Answer]
+
+    subgraph L[Agent Tools]
+        M[search_rag]
+        N[get_project_details]
+        O[fetch_github_projects]
+    end
 
     M --> J
     N --> J
     O --> J
 
-    K -->|No| P[Final Answer]
     P --> Q[FastAPI]
 ```
 
