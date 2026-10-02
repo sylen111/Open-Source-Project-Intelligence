@@ -108,6 +108,20 @@ open-source-project-intelligence/
 └── README.md
 ```
 
+### Initial RAG Evaluation
+
+The initial evaluation uses 5 manually curated queries.
+
+| Metric | Score |
+|---|---:|
+| Hit@1 | 0.80 |
+| Hit@3 | 1.00 |
+| Hit@5 | 1.00 |
+| MRR | 0.867 |
+
+These results provide an initial assessment of retrieval performance.
+The evaluation dataset will be expanded in future iterations.
+
 ## Project Status
 
 **V1 completed.**

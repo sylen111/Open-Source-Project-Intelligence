@@ -182,7 +182,9 @@ def build_context(results):
             technologies,
             summary,
             content,
-            similarity,
+            vector_similarity,
+            keyword_score,
+            hybrid_score,
         ) = result
 
         context_parts.append(
@@ -216,13 +218,18 @@ AI Summary:
 README:
 {content}
 
-Similarity:
-{similarity:.4f}
+Vector similarity:
+{vector_similarity:.4f}
+
+Keyword score:
+{keyword_score:.4f}
+
+Hybrid score:
+{hybrid_score:.4f}
 """
         )
 
     return "\n".join(context_parts)
-
 
 # -------------------------
 # Generate Answer

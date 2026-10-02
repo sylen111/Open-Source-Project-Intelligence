@@ -1,0 +1,25 @@
+[
+  {
+    "query": "Which projects are tutorials/curriculum designed for self learning?",
+    "expected_projects": ["AI-For-Beginners", "LLMs-from-scratch", "AI-Expert-Roadmap", "machine-learning-for-software-engineers", "quantum-tutor"]
+  },
+  {
+    "query": "I want to find a project for AI-powered image generation and editing with customizable visual workflows.",
+    "expected_projects": ["InvokeAI"]
+  },
+  {
+    "query": "Which projects use AI agents to interact with or operate robotic systems through natural language?",
+    "expected_projects": ["rosa"]
+  },
+  {
+    "query": "Which projects allow user to build AI Agents visually?",
+    "expected_projects": ["Flowise"]
+  },
+  {
+    "query": "Find an AI agent project related to trading.",
+    "expected_projects": [
+      "atlas-gic",
+      "sonic-hub"
+  ]
+}
+]
