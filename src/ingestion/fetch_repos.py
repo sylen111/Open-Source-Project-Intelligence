@@ -21,6 +21,8 @@ HEADERS = {
 def fetch_repositories(
     query="topic:artificial-intelligence",
     total=50,
+    sort="stars",
+    order="desc",
 ):
     repositories = []
     page = 1
@@ -30,8 +32,8 @@ def fetch_repositories(
 
         params = {
             "q": query,
-            "sort": "stars",
-            "order": "desc",
+            "sort": sort,
+            "order": order,
             "per_page": min(10, remaining),
             "page": page,
         }

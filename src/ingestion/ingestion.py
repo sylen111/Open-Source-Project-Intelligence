@@ -8,6 +8,8 @@ from .create_chunks import create_embeddings
 def fetch_github_projects(
     query,
     total=10,
+    sort="stars",
+    order="desc",
 ):
     """
     Fetch GitHub projects and process them through
@@ -16,17 +18,22 @@ def fetch_github_projects(
     Args:
         query: GitHub repository search query.
         total: Maximum number of repositories to fetch.
+        sort: GitHub sorting field.
+        order: GitHub sorting order.
 
     Returns:
         List of PostgreSQL project IDs.
     """
 
     print(f"Fetching GitHub projects: {query}")
+    print(f"Sort: {sort}, Order: {order}")
 
     # 1. Fetch
     repositories = fetch_repositories(
         query=query,
         total=total,
+        sort=sort,
+        order=order,
     )
 
     if not repositories:

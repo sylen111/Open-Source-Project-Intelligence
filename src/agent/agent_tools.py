@@ -104,20 +104,37 @@ def get_project_details_tool(project_name: str) -> dict[str, Any]:
 
 def fetch_github_projects_tool(
     query: str,
-    max_results: int = 10
+    sort: str = "stars",
+    order: str = "desc",
+    max_results: int = 10,
 ) -> dict[str, Any]:
 
     if max_results < 1 or max_results > 20:
         raise ValueError("max_results must be between 1 and 20")
 
+    if sort not in {
+        "stars",
+        "forks",
+        "help-wanted-issues",
+        "updated",
+    }:
+        raise ValueError("Invalid sort option")
+
+    if order not in {"asc", "desc"}:
+        raise ValueError("order must be 'asc' or 'desc'")
+
     project_ids = fetch_github_projects(
         query=query,
         total=max_results,
+        sort=sort,
+        order=order,
     )
 
     return {
         "tool": "fetch_github_projects",
         "query": query,
+        "sort": sort,
+        "order": order,
         "fetched": len(project_ids),
         "project_ids": project_ids,
     }

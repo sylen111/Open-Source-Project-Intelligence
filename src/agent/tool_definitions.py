@@ -37,7 +37,12 @@ TOOL_DEFINITIONS = [
         "type": "function",
         "function": {
             "name": "fetch_github_projects",
-            "description": "Fetch additional GitHub projects when existing project data is insufficient.",
+            "description": (
+                "Fetch additional GitHub projects when existing project data "
+                "is insufficient. Use this tool when the user asks for projects "
+                "that may not exist in the current database, especially recent "
+                "or newly updated projects."
+            ),
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -46,13 +51,42 @@ TOOL_DEFINITIONS = [
                         "description": (
                             "GitHub repository search query. "
                             "Use GitHub search syntax when appropriate, such as "
-                            "'topic:robotics AI agent' when the user specifies a GitHub topic."
-                            "Combine it with other relevant keywords when needed."
+                            "'topic:robotics AI agent' when the user specifies "
+                            "a GitHub topic. Combine it with other relevant "
+                            "keywords when needed."
+                        )
+                    },
+                    "sort": {
+                        "type": "string",
+                        "enum": [
+                            "stars",
+                            "forks",
+                            "help-wanted-issues",
+                            "updated"
+                        ],
+                        "description": (
+                            "Sort repositories by the selected field. "
+                            "Use 'updated' when the user asks for recent or "
+                            "recently updated projects."
+                        )
+                    },
+                    "order": {
+                        "type": "string",
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "description": (
+                            "Sort order. Use 'desc' for most recent, most "
+                            "popular, or highest-ranked results."
                         )
                     },
                     "max_results": {
                         "type": "integer",
-                        "description": "Maximum number of repositories to fetch. Maximum is 20."
+                        "description": (
+                            "Maximum number of repositories to fetch. "
+                            "Maximum is 20."
+                        )
                     }
                 },
                 "required": ["query"]
