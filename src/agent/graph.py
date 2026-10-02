@@ -83,6 +83,7 @@ def tools_node(state: AgentGraphState):
 
         tool_results.append({
             "name": function_name,
+            "arguments": arguments,
             "result": result
         })
 

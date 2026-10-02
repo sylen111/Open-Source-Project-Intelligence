@@ -36,6 +36,7 @@ def evaluate_query(item):
 
     query = item["query"]
     expected_tools = item["expected_tools"]
+    expected_tool_calls = item.get("expected_tool_calls", [])
 
     initial_state: AgentGraphState = {
         "user_query": query,
@@ -57,15 +58,48 @@ def evaluate_query(item):
         for tool in result["tool_results"]
     ]
 
+    actual_tool_calls = result["tool_results"]
+
     tool_correct = (
         actual_tools == expected_tools
     )
+
+    arguments_correct = True
+
+    if expected_tool_calls:
+
+        for expected_call in expected_tool_calls:
+
+            tool_name = expected_call["name"]
+            expected_arguments = expected_call["arguments"]
+
+            matching_calls = [
+                call
+                for call in actual_tool_calls
+                if call["name"] == tool_name
+            ]
+
+            if not matching_calls:
+                arguments_correct = False
+                break
+
+            actual_arguments = matching_calls[0]["arguments"]
+
+            for key, value in expected_arguments.items():
+
+                if actual_arguments.get(key) != value:
+                    arguments_correct = False
+                    break
+
+            if not arguments_correct:
+                break
 
     return {
         "query": query,
         "expected_tools": expected_tools,
         "actual_tools": actual_tools,
         "tool_correct": tool_correct,
+        "arguments_correct": arguments_correct,
         "answer": result["final_answer"]
     }
 

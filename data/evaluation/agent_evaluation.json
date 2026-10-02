@@ -1,6 +1,6 @@
 [
   {
-    "query": "Find projects related to AI agents.",
+    "query": "Find AI projects related to trading.",
     "expected_tools": [
       "search_rag"
     ]
@@ -12,9 +12,19 @@
     ]
   },
   {
-    "query": "Find 1 latest GitHub project related to AI research.",
+    "query": "Find 1 latest GitHub project related to AI agent.",
     "expected_tools": [
-      "fetch_github_projects"
+        "fetch_github_projects"
+    ],
+    "expected_tool_calls": [
+        {
+            "name": "fetch_github_projects",
+            "arguments": {
+                "sort": "updated",
+                "order": "desc",
+                "max_results": 1
+            }
+        }
     ]
   },
   {
