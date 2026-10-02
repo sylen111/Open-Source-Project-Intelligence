@@ -63,6 +63,14 @@ flowchart TD
 * GitHub REST API
 * Docker
 
+## Database Setup
+
+1. Create a PostgreSQL database.
+2. Enable the pgvector extension.
+3. Run database/schema.sql.
+4. Configure the database environment variables.
+5. Run the ingestion pipeline to populate the database.
+
 ## API
 
 Start the API:
@@ -93,20 +101,6 @@ Example response:
 }
 ```
 
-## Project Structure
-
-```text
-open-source-project-intelligence/
-├── data/
-├── src/
-│   ├── ingestion/
-│   ├── rag/
-│   ├── agent/
-│   └── api/
-├── Dockerfile
-├── requirements.txt
-└── README.md
-```
 ## Evaluation
 ### Initial RAG Evaluation
 
