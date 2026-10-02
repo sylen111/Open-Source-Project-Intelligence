@@ -12,13 +12,13 @@
     ]
   },
   {
-    "query": "Find latest GitHub projects related to AI agents.",
+    "query": "Find 1 latest GitHub project related to AI research.",
     "expected_tools": [
       "fetch_github_projects"
     ]
   },
   {
-    "query": "Find the project that allows users to build AI agents visually, then tell me how many GitHub stars it has.",
+    "query": "Find the project that allows users to build AI agents visually, then tell me who owns the GitHub repository and how many forks it has.",
     "expected_tools": [
       "search_rag",
       "get_project_details"

@@ -4,6 +4,7 @@ import time
 from datetime import datetime
 import requests
 from dotenv import load_dotenv
+from ..db import get_db_connection
 
 load_dotenv()
 
@@ -65,15 +66,27 @@ def fetch_repositories(
 
             items = data.get("items", [])
 
-            if not items:
-                break
+            github_ids = [
+                repo["id"]
+                for repo in items
+            ]
 
-            repositories.extend(items)
+            existing_ids = get_existing_github_ids(github_ids)
+
+            new_items = [
+                repo
+                for repo in items
+                if repo["id"] not in existing_ids
+            ]
+
+            repositories.extend(new_items)
 
             print(
                 f"Page {page}: "
-                f"fetched {len(items)} repositories. "
-                f"Total: {len(repositories)}"
+                f"fetched {len(items)}, "
+                f"existing {len(existing_ids)}, "
+                f"new {len(new_items)}, "
+                f"total new {len(repositories)}"
             )
 
             page += 1
@@ -110,6 +123,30 @@ def save_raw_data(data):
     )
 
     return output_file
+
+def get_existing_github_ids(github_ids):
+    if not github_ids:
+        return set()
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    query = """
+        SELECT github_id
+        FROM projects
+        WHERE github_id = ANY(%s);
+    """
+
+    try:
+        cursor.execute(query, (github_ids,))
+        rows = cursor.fetchall()
+
+        return {row[0] for row in rows}
+
+    finally:
+        cursor.close()
+        conn.close()
+
 
 def main():
     repositories = fetch_repositories(
