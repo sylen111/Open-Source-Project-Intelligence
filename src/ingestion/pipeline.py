@@ -3,6 +3,7 @@ import json
 from .transform_repos import (
     transform_repositories,
     validate_repositories,
+    remove_duplicate_repositories,
 )
 from .load_projects import insert_projects
 
@@ -28,11 +29,31 @@ def process_repositories(raw_repositories):
     print(f"Valid repositories: {len(valid)}")
     print(f"Invalid repositories: {len(invalid)}")
 
+    if invalid:
+        print("\nData Quality Issues:")
+
+        for item in invalid:
+            repo = item["repo"]
+            errors = item["errors"]
+
+            print(
+                f"- {repo.get('github_id')}: "
+                f"{', '.join(errors)}"
+            )
+
     if not valid:
         return []
 
+    print("Quality: checking duplicates...")
+
+    unique = remove_duplicate_repositories(valid)
+
+    duplicates_removed = len(valid) - len(unique)
+
+    print(f"Duplicates removed: {duplicates_removed}")
+
     print("Load: inserting into PostgreSQL...")
-    project_ids = insert_projects(valid)
+    project_ids = insert_projects(unique)
 
     return project_ids
 
@@ -53,3 +74,7 @@ def run_pipeline(input_file):
     print("ETL pipeline completed.")
 
     return project_ids
+
+
+if __name__ == "__main__":
+    run_pipeline("data/raw/repositories.json")

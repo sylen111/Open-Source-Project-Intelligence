@@ -1,6 +1,8 @@
 from datetime import datetime
 import json
 import os
+from collections import Counter
+
 
 OUTPUT_FILE = "data/transformed/repositories.json"
 
@@ -54,26 +56,45 @@ def transform_repositories(repositories):
     ]
 
 def validate_repository(repo):
+    errors = []
+
     required_fields = [
         "github_id",
         "name",
         "full_name",
     ]
 
+    # Completeness
     for field in required_fields:
         if not repo.get(field):
-            return False
+            errors.append(f"Missing required field: {field}")
 
-    if not isinstance(repo["github_id"], int):
-        return False
+    # Validity
+    if "github_id" in repo and not isinstance(repo["github_id"], int):
+        errors.append("github_id must be an integer")
 
-    if not isinstance(repo["stars"], int):
-        return False
+    if "stars" in repo:
+        if not isinstance(repo["stars"], int):
+            errors.append("stars must be an integer")
+        elif repo["stars"] < 0:
+            errors.append("stars cannot be negative")
 
-    if repo["stars"] < 0:
-        return False
+    if "forks" in repo:
+        if not isinstance(repo["forks"], int):
+            errors.append("forks must be an integer")
+        elif repo["forks"] < 0:
+            errors.append("forks cannot be negative")
 
-    return True
+    if "open_issues" in repo:
+        if not isinstance(repo["open_issues"], int):
+            errors.append("open_issues must be an integer")
+        elif repo["open_issues"] < 0:
+            errors.append("open_issues cannot be negative")
+
+    if "topics" in repo and not isinstance(repo["topics"], list):
+        errors.append("topics must be a list")
+
+    return errors
 
 
 def validate_repositories(repositories):
@@ -81,12 +102,33 @@ def validate_repositories(repositories):
     invalid = []
 
     for repo in repositories:
-        if validate_repository(repo):
+        errors = validate_repository(repo)
+
+        if not errors:
             valid.append(repo)
         else:
-            invalid.append(repo)
+            invalid.append({
+                "repo": repo,
+                "errors": errors,
+            })
 
     return valid, invalid
+
+
+def remove_duplicate_repositories(repositories):
+    seen = set()
+    unique = []
+
+    for repo in repositories:
+        github_id = repo["github_id"]
+
+        if github_id in seen:
+            continue
+
+        seen.add(github_id)
+        unique.append(repo)
+
+    return unique
 
 def save_transformed_data(repositories):
     os.makedirs(
@@ -106,3 +148,19 @@ def save_transformed_data(repositories):
         f"Saved {len(repositories)} transformed repositories "
         f"to {OUTPUT_FILE}"
     )
+
+def generate_data_quality_report(repositories):
+    valid, invalid = validate_repositories(repositories)
+
+    error_counts = Counter()
+
+    for item in invalid:
+        for error in item["errors"]:
+            error_counts[error] += 1
+
+    return {
+        "total": len(repositories),
+        "valid": len(valid),
+        "invalid": len(invalid),
+        "errors": dict(error_counts),
+    }
