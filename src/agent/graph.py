@@ -1,3 +1,4 @@
+import os
 import ollama
 from typing import Any, TypedDict
 
@@ -7,6 +8,12 @@ from .agent_config import AGENT_SYSTEM_PROMPT
 from .tool_definitions import TOOL_DEFINITIONS
 from .agent_tools import TOOLS
 
+OLLAMA_HOST = os.getenv(
+    "OLLAMA_HOST",
+    "http://localhost:11434"
+)
+
+ollama_client = ollama.Client(host=OLLAMA_HOST)
 
 MODEL = "qwen2.5:3b"
 MAX_ITERATIONS = 5
@@ -22,7 +29,7 @@ class AgentGraphState(TypedDict):
 
 def agent_node(state: AgentGraphState):
 
-    response = ollama.chat(
+    response = ollama_client.chat(
         model=MODEL,
         messages=[
             {

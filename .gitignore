@@ -1,12 +1,21 @@
-.env# Virtual environment
+# Virtual environments
 .venv/
+.airflow_venv/
+airflow_venv/
+venv/
+env/
 
 # Environment variables
 .env
+.env.*
+!.env.example
 
 # Python
 __pycache__/
 *.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
 
 # IDE
 .vscode/
@@ -18,3 +27,18 @@ data/transformed/*
 
 # Logs
 *.log
+logs/
+
+# Airflow
+airflow/logs/
+airflow/airflow.cfg
+airflow/airflow.db
+airflow/webserver_config.py
+airflow/*.pid
+
+# Docker
+docker-compose.override.yml
+
+# OS
+.DS_Store
+Thumbs.db

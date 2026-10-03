@@ -13,18 +13,29 @@ def load_raw_data(input_file):
         return json.load(f)
 
 
-def process_repositories(raw_repositories):
+def transform_data(raw_repositories):
     """
-    Transform, validate, and load repositories into PostgreSQL.
-
-    Returns:
-        List of PostgreSQL project IDs.
+    Transform raw GitHub repositories.
     """
     print("Transform: cleaning data...")
+
     transformed = transform_repositories(raw_repositories)
 
+    print(f"Transformed repositories: {len(transformed)}")
+
+    return transformed
+
+
+def validate_data(repositories):
+    """
+    Validate repositories and remove duplicates.
+
+    Returns:
+        List of valid, unique repositories.
+    """
     print("Validate: checking data...")
-    valid, invalid = validate_repositories(transformed)
+
+    valid, invalid = validate_repositories(repositories)
 
     print(f"Valid repositories: {len(valid)}")
     print(f"Invalid repositories: {len(invalid)}")
@@ -52,15 +63,48 @@ def process_repositories(raw_repositories):
 
     print(f"Duplicates removed: {duplicates_removed}")
 
+    return unique
+
+
+def load_data(repositories):
+    """
+    Load validated repositories into PostgreSQL.
+
+    Returns:
+        List of PostgreSQL project IDs.
+    """
+    if not repositories:
+        print("No repositories to load.")
+        return []
+
     print("Load: inserting into PostgreSQL...")
-    project_ids = insert_projects(unique)
+
+    project_ids = insert_projects(repositories)
+
+    print(f"Loaded project IDs: {project_ids}")
+
+    return project_ids
+
+
+def process_repositories(raw_repositories):
+    """
+    Transform, validate, and load repositories into PostgreSQL.
+
+    Returns:
+        List of PostgreSQL project IDs.
+    """
+    transformed = transform_data(raw_repositories)
+
+    valid_repositories = validate_data(transformed)
+
+    project_ids = load_data(valid_repositories)
 
     return project_ids
 
 
 def run_pipeline(input_file):
     """
-    Run the ETL pipeline using the given raw JSON file.
+    Run the complete ETL pipeline using the given raw JSON file.
     """
     print(f"Extract: loading {input_file}...")
 
