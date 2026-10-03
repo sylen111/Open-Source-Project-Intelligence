@@ -1,4 +1,4 @@
-from .fetch_repos import fetch_repositories, save_raw_data
+from .fetch_repos import fetch_repositories, save_raw_data, filter_new_or_changed_repositories
 from .pipeline import run_pipeline
 from .ingest_readmes import ingest_readmes
 from .enrich_projects import enrich_projects
@@ -38,6 +38,21 @@ def fetch_github_projects(
 
     if not repositories:
         print("No repositories found.")
+        return []
+
+    fetched_count = len(repositories)
+
+    repositories = filter_new_or_changed_repositories(repositories)
+
+    print(
+        f"Change detection: "
+        f"fetched {fetched_count}, "
+        f"new/changed {len(repositories)}, "
+        f"unchanged {fetched_count - len(repositories)}"
+    )
+
+    if not repositories:
+        print("No new or changed repositories.")
         return []
 
     # 2. Save raw data

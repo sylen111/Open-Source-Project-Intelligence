@@ -61,32 +61,14 @@ def fetch_repositories(
 
             # Handle other HTTP errors
             response.raise_for_status()
-
             data = response.json()
-
             items = data.get("items", [])
-
-            github_ids = [
-                repo["id"]
-                for repo in items
-            ]
-
-            existing_ids = get_existing_github_ids(github_ids)
-
-            new_items = [
-                repo
-                for repo in items
-                if repo["id"] not in existing_ids
-            ]
-
-            repositories.extend(new_items)
+            repositories.extend(items)
 
             print(
                 f"Page {page}: "
                 f"fetched {len(items)}, "
-                f"existing {len(existing_ids)}, "
-                f"new {len(new_items)}, "
-                f"total new {len(repositories)}"
+                f"total fetched {len(repositories)}"
             )
 
             page += 1
@@ -146,6 +128,60 @@ def get_existing_github_ids(github_ids):
     finally:
         cursor.close()
         conn.close()
+
+def get_existing_projects(github_ids):
+    if not github_ids:
+        return {}
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    query = """
+        SELECT github_id, updated_at
+        FROM projects
+        WHERE github_id = ANY(%s);
+    """
+
+    try:
+        cursor.execute(query, (github_ids,))
+        rows = cursor.fetchall()
+
+        return {
+            row[0]: row[1]
+            for row in rows
+        }
+
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def filter_new_or_changed_repositories(repositories):
+    github_ids = [
+        repo["id"]
+        for repo in repositories
+    ]
+
+    existing_projects = get_existing_projects(github_ids)
+
+    new_or_changed = []
+
+    for repo in repositories:
+        github_id = repo["id"]
+        github_updated_at = datetime.fromisoformat(
+            repo["updated_at"].replace("Z", "+00:00")
+        )
+
+        if github_id not in existing_projects:
+            new_or_changed.append(repo)
+            continue
+
+        db_updated_at = existing_projects[github_id]
+
+        if github_updated_at.replace(tzinfo=None) > db_updated_at:
+            new_or_changed.append(repo)
+
+    return new_or_changed
 
 
 def main():
