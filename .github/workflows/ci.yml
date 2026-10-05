@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+  pull_request:
+    branches:
+      - main
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -52,6 +56,6 @@ jobs:
         run: pytest
         env:
             PYTHONPATH: .
-            
+
       - name: Build Docker image
         run: docker build -t open-source-project-intelligence .
