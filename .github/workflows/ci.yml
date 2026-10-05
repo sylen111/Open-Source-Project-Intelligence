@@ -52,3 +52,6 @@ jobs:
         run: pytest
         env:
             PYTHONPATH: .
+            
+      - name: Build Docker image
+        run: docker build -t open-source-project-intelligence .
