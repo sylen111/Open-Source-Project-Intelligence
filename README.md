@@ -140,9 +140,141 @@ Validate
    ↓
 PostgreSQL
 ```
+
 For existing repositories, the pipeline compares the GitHub `updated_at` timestamp with the database record.
 
 This allows the system to focus processing on **new or changed projects** instead of rebuilding the entire dataset every time.
+
+---
+
+## AI Enrichment
+
+Projects are enriched using a local LLM through Ollama.
+
+The model generates structured information such as:
+
+- Project category
+- Use cases
+- Technologies
+- Summary
+
+The output is validated using Pydantic before being stored.
+
+This creates additional structured information that can be used together with the original GitHub metadata and README content during retrieval.
+
+---
+
+## RAG
+
+The project uses **pgvector** for semantic retrieval.
+
+The retrieval process combines:
+
+- Project metadata
+- README content
+- LLM-generated enrichment
+- Vector similarity
+- Keyword matching
+
+This allows queries such as:
+
+```text
+Which projects are related to AI agents?
+```
+
+or:
+
+```text
+Find projects for building visual AI agent workflows.
+```
+
+to retrieve relevant projects based on both semantic meaning and project information.
+
+---
+
+## AI Agent
+
+A LangGraph-based agent acts as a GitHub project research assistant.
+
+The agent has three main tools:
+
+```text
+search_rag
+    ↓
+Search existing project knowledge
+
+get_project_details
+    ↓
+Retrieve detailed information about a project
+
+fetch_github_projects
+    ↓
+Retrieve additional GitHub projects when needed
+```
+
+The agent decides when a tool is necessary instead of following a fixed sequence.
+
+For example:
+
+```text
+User Question
+      ↓
+    Agent
+      ↓
+Search existing knowledge
+      ↓
+Enough information?
+   ┌────┴────┐
+  Yes        No
+   ↓          ↓
+Answer    Fetch more GitHub data
+              ↓
+            Answer
+```
+
+---
+
+## Workflow Orchestration
+
+Airflow is used to orchestrate the data pipeline.
+
+The current workflow includes:
+
+```text
+Fetch GitHub Data
+        ↓
+Incremental Filter
+        ↓
+Transform
+        ↓
+Validate
+        ↓
+Load PostgreSQL
+        ↓
+Ingest README
+        ↓
+AI Enrichment
+        ↓
+Create Embeddings
+```
+
+This separates individual pipeline stages and makes the workflow easier to monitor and manage.
+
+---
+
+## Testing
+
+The project includes automated tests using `pytest`.
+
+Current tests cover areas such as:
+
+- Data validation
+- Duplicate detection
+- Data quality reporting
+- PostgreSQL integration
+- Incremental ingestion logic
+
+The project also uses a separate PostgreSQL test database for integration tests.
 
 ---
 
