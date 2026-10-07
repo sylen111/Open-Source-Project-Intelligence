@@ -10,14 +10,20 @@ jobs:
     steps:
       - name: Configure SSH
         env:
-          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
-          EC2_HOST: ${{ secrets.EC2_HOST }}
+            EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+            EC2_HOST: ${{ secrets.EC2_HOST }}
         run: |
-          mkdir -p ~/.ssh
-          printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/ec2_key
-          chmod 600 ~/.ssh/ec2_key
-          ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
+            mkdir -p ~/.ssh
 
+            printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/ec2_key
+            chmod 600 ~/.ssh/ec2_key
+
+            echo "Checking SSH key..."
+            ssh-keygen -y -f ~/.ssh/ec2_key > ~/.ssh/ec2_key.pub
+            ssh-keygen -lf ~/.ssh/ec2_key.pub
+
+            ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
+            
       - name: Test SSH connection
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
