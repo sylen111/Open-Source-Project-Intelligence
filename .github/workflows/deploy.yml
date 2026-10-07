@@ -58,6 +58,9 @@ jobs:
           echo "Starting services..."
           docker compose up -d
 
+          echo "Cleaning unused Docker images..."
+          docker image prune -f
+
           echo "Deployment status:"
           docker compose ps
 

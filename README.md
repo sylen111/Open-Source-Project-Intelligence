@@ -2,19 +2,19 @@
 
 An AI-powered system for discovering, processing, and understanding open-source GitHub projects.
 
-This project demonstrates an end-to-end workflow that combines Data Engineering, AI Engineering, and Production Engineering.
+This project demonstrates an end-to-end workflow combining Data Engineering, AI Engineering, and Production Engineering, from GitHub data ingestion to an AI-powered RAG agent deployed on AWS.
 
 ## Overview
 
-The system collects GitHub repository data, processes and validates it through an incremental data pipeline, enriches projects using a local LLM, and makes the data searchable through RAG and an AI agent.
+The system collects GitHub repository data, processes it through an incremental ETL pipeline, enriches projects using an LLM, and makes the resulting knowledge searchable through hybrid RAG and an AI agent.
 
-The project is designed to demonstrate how raw external data can be transformed into a usable AI-powered application.
-
+The application is containerized with Docker, orchestrated with Airflow, tested through GitHub Actions, and automatically deployed to AWS EC2.
+```text
 GitHub API
     ↓
 Incremental Ingestion
     ↓
-ETL + Data Validation
+ETL + Validation
     ↓
 PostgreSQL
     ↓
@@ -26,44 +26,33 @@ Embeddings + pgvector
     ↓
 Hybrid RAG
     ↓
-AI Agent + Tools
+LangGraph Agent + Tools
     ↓
 FastAPI
     ↓
-Docker + CI
-    ↓
-AWS
+Docker + AWS
+```
 
 ## Architecture
 
 ```mermaid
 flowchart TD
-    A[GitHub API] --> B[Raw JSON]
-    B --> C[ETL]
-    C --> D[PostgreSQL]
-    D --> E[README Ingestion]
-    E --> F[AI Data Enrichment]
-    F --> G[Chunking + Embeddings]
-    G --> H[pgvector / RAG]
+    A[GitHub API] --> B[Incremental ETL]
+    B --> C[(PostgreSQL)]
+    C --> D[README + LLM Enrichment]
+    D --> E[Embeddings + pgvector]
+    E --> F[Hybrid RAG]
+    F --> G[LangGraph Agent]
 
-    H --> I[LangGraph Agent]
-    I --> J[Agent Node]
-    J --> K{Tool Needed?}
+    G --> H[search_rag]
+    G --> I[get_project_details]
+    G --> J[fetch_github_projects]
 
-    K -->|Yes| L
-    K -->|No| P[Final Answer]
+    H --> G
+    I --> G
+    J --> G
 
-    subgraph L[Agent Tools]
-        M[search_rag]
-        N[get_project_details]
-        O[fetch_github_projects]
-    end
-
-    M --> J
-    N --> J
-    O --> J
-
-    P --> Q[FastAPI]
+    G --> K[FastAPI]
 ```
 
 ## Features
@@ -90,15 +79,12 @@ flowchart TD
 
 ### Production Engineering
 
-- FastAPI application
-- Dockerized application
-- Dockerized Airflow
-- PostgreSQL container
-- GitHub Actions CI
-- Automated pytest execution
-- Docker image build validation
-- Pull Request CI
-- Protected `main` branch with required CI checks
+- FastAPI
+- Docker + Docker Compose
+- GitHub Actions CI/CD
+- Automated testing
+- AWS EC2 deployment
+- AWS Secrets Manager + IAM
 
 ## Tech Stack
 
@@ -106,8 +92,8 @@ flowchart TD
 |---|---|
 | Language | Python |
 | Database | PostgreSQL, pgvector |
-| Data Pipeline | Python ETL, Airflow |
-| LLM | Ollama, Qwen2.5 |
+| Data Pipeline | Python ETL, Apache Airflow |
+| LLM | Ollama (local), OpenAI (cloud) |
 | Embeddings | Sentence Transformers |
 | RAG | pgvector, hybrid retrieval |
 | Agent | LangGraph |
@@ -116,7 +102,7 @@ flowchart TD
 | Containerization | Docker, Docker Compose |
 | CI | GitHub Actions |
 | Data Source | GitHub REST API |
-| Cloud | AWS |
+| Cloud | AWS EC2, Secrets Manager, IAM |
 
 ---
 ## Data Pipeline
@@ -147,23 +133,6 @@ This allows the system to focus processing on **new or changed projects** instea
 
 ---
 
-## AI Enrichment
-
-Projects are enriched using a local LLM through Ollama.
-
-The model generates structured information such as:
-
-- Project category
-- Use cases
-- Technologies
-- Summary
-
-The output is validated using Pydantic before being stored.
-
-This creates additional structured information that can be used together with the original GitHub metadata and README content during retrieval.
-
----
-
 ## RAG
 
 The project uses **pgvector** for semantic retrieval.
@@ -176,7 +145,7 @@ The retrieval process combines:
 - Vector similarity
 - Keyword matching
 
-This allows queries such as:
+Example queries:
 
 ```text
 Which projects are related to AI agents?
@@ -188,31 +157,15 @@ or:
 Find projects for building visual AI agent workflows.
 ```
 
-to retrieve relevant projects based on both semantic meaning and project information.
-
 ---
 
 ## AI Agent
 
-A LangGraph-based agent acts as a GitHub project research assistant.
-
 The agent has three main tools:
 
-```text
-search_rag
-    ↓
-Search existing project knowledge
-
-get_project_details
-    ↓
-Retrieve detailed information about a project
-
-fetch_github_projects
-    ↓
-Retrieve additional GitHub projects when needed
-```
-
-The agent decides when a tool is necessary instead of following a fixed sequence.
+- search_rag — search existing project knowledge
+- get_project_details — retrieve project details
+- fetch_github_projects — fetch additional GitHub data
 
 For example:
 
@@ -264,69 +217,54 @@ This separates individual pipeline stages and makes the workflow easier to monit
 
 ## Testing
 
-The project includes automated tests using `pytest`.
+The project uses pytest for unit and PostgreSQL integration tests.
 
-Current tests cover areas such as:
+GitHub Actions automatically runs tests and validates the Docker build.
 
-- Data validation
-- Duplicate detection
-- Data quality reporting
-- PostgreSQL integration
-- Incremental ingestion logic
-
-The project also uses a separate PostgreSQL test database for integration tests.
+Pull Requests are required to pass CI before merging into main.
 
 ---
-
-## Database
-
-The project uses PostgreSQL with pgvector.
-
-The database stores:
-
-- GitHub project metadata
-- Topics
-- README content
-- LLM enrichment
-- Text chunks
-- Embeddings
-
-The database schema can be initialized with:
-
-```bash
-psql -f database/schema.sql
+## CI/CD
+```text
+dev
+ ↓
+Pull Request
+ ↓
+CI
+ ↓
+main
+ ↓
+GitHub Actions
+ ↓
+AWS EC2
+ ↓
+Docker Compose
 ```
-
 ---
-
+## AWS Deployment
+The production environment contains:
+```text
+AWS EC2
+├── FastAPI
+├── Airflow Webserver
+├── Airflow Scheduler
+└── PostgreSQL + pgvector
+```
+### Live API
+[Swagger Docs](http://13.211.54.105:8000/docs)
+---
 ## API
 
-Start the API locally:
+Run locally:
 
 ```bash
 uvicorn src.api.main:app --reload
 ```
 
-Open the interactive API documentation:
+Interactive API documentation:
 
 ```text
 http://localhost:8000/docs
-```
-
-Example request:
-
-```json
-{
-  "query": "Which projects are related to AI agents?"
-}
-```
-
-Example response:
-
-```json
-{
-  "answer": "Several projects in the knowledge base are related to AI agents..."
-}
 ```
 
 
@@ -358,50 +296,10 @@ The evaluation datasets will be expanded in future iterations.
 
 ---
 
-## Project Status
-
-### V1 — AI + Data Pipeline
-
-Completed.
-
-- GitHub ingestion
-- ETL
-- PostgreSQL
-- AI enrichment
-- pgvector RAG
-- LangGraph agent
-- FastAPI
-
-### V2 — Production Engineering
-
-Completed so far:
-
-- Incremental pipeline
-- Data quality improvements
-- Airflow orchestration
-- Docker
-- GitHub Actions CI
-- PostgreSQL integration tests
-- Docker build validation
-- Pull Request CI
-- Branch protection
-
-### Next
-
-- AWS fundamentals
-- AWS deployment
-- Production data pipeline improvements
-- More automated testing
-- Monitoring and reliability improvements
-
----
-
 ## Future Improvements
 
-- AWS deployment
-- RAG evaluation
-- Agent evaluation
-- More comprehensive automated tests
+- Improved RAG evaluation
+- More comprehensive Agent evaluation
+- Larger automated test suite
 - Improved retrieval quality
-- Production monitoring
 - Frontend interface
