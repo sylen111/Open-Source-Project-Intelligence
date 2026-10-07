@@ -28,7 +28,8 @@ def chat(request: ChatRequest):
         ],
         "tool_results": [],
         "final_answer": None,
-        "iterations": 0
+        "iterations": 0,
+        "previous_response_id": None
     }
 
     try:
