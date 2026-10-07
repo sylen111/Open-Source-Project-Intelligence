@@ -47,6 +47,9 @@ services:
       bash -c "
       airflow db migrate
       "
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
 
   airflow-webserver:
     image: open-source-airflow:latest
@@ -64,6 +67,9 @@ services:
     ports:
       - "8080:8080"
     command: webserver
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
 
   airflow-scheduler:
     image: open-source-airflow:latest
@@ -79,6 +85,9 @@ services:
       PYTHONPATH: /opt/airflow
       DB_HOST: postgres
     command: scheduler
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
 
 volumes:
   postgres_data:
