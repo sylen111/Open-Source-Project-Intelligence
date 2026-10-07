@@ -11,6 +11,9 @@ services:
     environment:
       DB_HOST: postgres
       OLLAMA_HOST: http://host.docker.internal:11434
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      DB_PASSWORD: ${DB_PASSWORD}
 
   postgres:
     image: pgvector/pgvector:pg16
