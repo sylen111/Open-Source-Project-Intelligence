@@ -1,14 +1,9 @@
 import json
-import ollama
 from pydantic import BaseModel, Field
 from ..db import get_db_connection
+from ..agent.llm import create_llm_client
 
-# -------------------------
-# Configuration
-# -------------------------
-
-MODEL = "qwen2.5:3b"
-
+llm_client = create_llm_client()
 
 # -------------------------
 # Structured Output Schema
@@ -117,20 +112,15 @@ Rules:
 - return only the requested structured output
 """
 
-    response = ollama.chat(
-        model=MODEL,
+    result = llm_client.structured_output(
         messages=[
             {
                 "role": "user",
                 "content": prompt,
             }
         ],
-        format=ProjectEnrichment.model_json_schema(),
+        schema=ProjectEnrichment,
     )
-
-    content = response["message"]["content"]
-
-    result = ProjectEnrichment.model_validate_json(content)
 
     return result
 
@@ -208,7 +198,7 @@ def save_enrichment(conn, project_id, enrichment):
                 json.dumps(enrichment.use_cases),
                 json.dumps(enrichment.technologies),
                 enrichment.summary,
-                MODEL,
+                llm_client.model,
             ),
         )
 

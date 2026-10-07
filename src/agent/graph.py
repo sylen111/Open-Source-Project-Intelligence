@@ -1,5 +1,3 @@
-import os
-import ollama
 from typing import Any, TypedDict
 
 from langgraph.graph import StateGraph, START, END
@@ -7,17 +5,10 @@ from langgraph.graph import StateGraph, START, END
 from .agent_config import AGENT_SYSTEM_PROMPT
 from .tool_definitions import TOOL_DEFINITIONS
 from .agent_tools import TOOLS
+from .llm import create_llm_client
 
-OLLAMA_HOST = os.getenv(
-    "OLLAMA_HOST",
-    "http://localhost:11434"
-)
-
-ollama_client = ollama.Client(host=OLLAMA_HOST)
-
-MODEL = "qwen2.5:3b"
 MAX_ITERATIONS = 5
-
+llm_client = create_llm_client()
 
 class AgentGraphState(TypedDict):
     user_query: str
@@ -29,8 +20,7 @@ class AgentGraphState(TypedDict):
 
 def agent_node(state: AgentGraphState):
 
-    response = ollama_client.chat(
-        model=MODEL,
+    message = llm_client.chat_with_tools(
         messages=[
             {
                 "role": "system",
@@ -40,8 +30,6 @@ def agent_node(state: AgentGraphState):
         ],
         tools=TOOL_DEFINITIONS
     )
-
-    message = response["message"]
 
     if not message.get("tool_calls"):
         return {
@@ -57,16 +45,14 @@ def agent_node(state: AgentGraphState):
 
 
 def tools_node(state: AgentGraphState):
-
     messages = []
     tool_results = []
 
     last_message = state["messages"][-1]
 
     for tool_call in last_message["tool_calls"]:
-
-        function_name = tool_call["function"]["name"]
-        arguments = tool_call["function"]["arguments"]
+        function_name = tool_call["name"]
+        arguments = tool_call["arguments"]
 
         function = TOOLS.get(function_name)
 
@@ -77,14 +63,12 @@ def tools_node(state: AgentGraphState):
 
         try:
             result = function(**arguments)
-
         except Exception as e:
-            result = {
-                "error": str(e)
-            }
+            result = {"error": str(e)}
 
         messages.append({
             "role": "tool",
+            "tool_call_id": tool_call["id"],
             "content": str(result)
         })
 
@@ -98,7 +82,6 @@ def tools_node(state: AgentGraphState):
         "messages": messages,
         "tool_results": tool_results
     }
-
 
 def should_continue(state: AgentGraphState):
 

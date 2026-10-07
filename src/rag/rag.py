@@ -1,12 +1,12 @@
 import os
 import re
-import ollama
 from sentence_transformers import SentenceTransformer
 from ..db import get_db_connection
+from ..agent.llm import create_llm_client
 
+llm_client = create_llm_client()
 
 EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5"
-LLM_MODEL = "qwen2.5:3b"
 
 TOP_K = 5
 
@@ -257,8 +257,7 @@ Question:
 Answer clearly and concisely.
 """
 
-    response = ollama.chat(
-        model=LLM_MODEL,
+    response = llm_client.chat(
         messages=[
             {
                 "role": "user",
@@ -267,7 +266,7 @@ Answer clearly and concisely.
         ],
     )
 
-    return response["message"]["content"]
+    return response["content"]
 
 def extract_keywords(query):
 
