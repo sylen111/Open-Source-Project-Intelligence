@@ -7,16 +7,19 @@ from openai import OpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
+
 T = TypeVar("T", bound=BaseModel)
+
 
 class ToolCall(BaseModel):
     id: str | None = None
     name: str
     arguments: dict[str, Any]
 
+
 class LLMClient:
     model: str
-    
+
     def chat(
         self,
         messages: list[dict[str, Any]],
@@ -27,6 +30,7 @@ class LLMClient:
         self,
         messages: list[dict[str, Any]],
         tools: list[dict[str, Any]],
+        previous_response_id: str | None = None,
     ) -> dict[str, Any]:
         raise NotImplementedError
 
@@ -67,6 +71,7 @@ class OllamaClient(LLMClient):
         self,
         messages: list[dict[str, Any]],
         tools: list[dict[str, Any]],
+        previous_response_id: str | None = None,
     ) -> dict[str, Any]:
 
         response = self.client.chat(
@@ -92,6 +97,7 @@ class OllamaClient(LLMClient):
         return {
             "content": message.get("content"),
             "tool_calls": tool_calls,
+            "response_id": None,
         }
 
     def structured_output(
@@ -128,8 +134,6 @@ class OpenAIClient(LLMClient):
             "gpt-6-luna"
         )
 
-        self.previous_response_id = None
-
     def chat(
         self,
         messages: list[dict[str, Any]],
@@ -148,6 +152,7 @@ class OpenAIClient(LLMClient):
         self,
         messages: list[dict[str, Any]],
         tools: list[dict[str, Any]],
+        previous_response_id: str | None = None,
     ) -> dict[str, Any]:
 
         openai_tools = []
@@ -164,7 +169,7 @@ class OpenAIClient(LLMClient):
                 }
             )
 
-        if self.previous_response_id is None:
+        if previous_response_id is None:
 
             # First request:
             # send the normal conversation to OpenAI.
@@ -178,11 +183,11 @@ class OpenAIClient(LLMClient):
 
         else:
 
-            # Subsequent requests:
-            # the previous response already contains the
-            # assistant's function_call.
+            # Subsequent request:
+            # the previous response already contains
+            # the assistant's function call.
             #
-            # We only need to send the tool outputs.
+            # Only send the corresponding tool outputs.
             input_messages = []
 
             for message in messages:
@@ -202,10 +207,8 @@ class OpenAIClient(LLMClient):
                 model=self.model,
                 input=input_messages,
                 tools=openai_tools,
-                previous_response_id=self.previous_response_id,
+                previous_response_id=previous_response_id,
             )
-
-        self.previous_response_id = response.id
 
         tool_calls = []
 
@@ -225,6 +228,7 @@ class OpenAIClient(LLMClient):
         return {
             "content": response.output_text,
             "tool_calls": tool_calls,
+            "response_id": response.id,
         }
 
     def structured_output(
@@ -253,9 +257,10 @@ class OpenAIClient(LLMClient):
         return schema.model_validate_json(
             response.output_text
         )
-        
+
 
 def create_llm_client() -> LLMClient:
+
     provider = os.getenv(
         "LLM_PROVIDER",
         "ollama"

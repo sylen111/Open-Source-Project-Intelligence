@@ -8,7 +8,6 @@ from .agent_tools import TOOLS
 from .llm import create_llm_client
 
 MAX_ITERATIONS = 5
-llm_client = create_llm_client()
 
 class AgentGraphState(TypedDict):
     user_query: str
@@ -16,9 +15,12 @@ class AgentGraphState(TypedDict):
     tool_results: list[dict[str, Any]]
     final_answer: str | None
     iterations: int
+    previous_response_id: str | None
 
 
 def agent_node(state: AgentGraphState):
+
+    llm_client = create_llm_client()
 
     message = llm_client.chat_with_tools(
         messages=[
@@ -28,21 +30,24 @@ def agent_node(state: AgentGraphState):
             },
             *state["messages"]
         ],
-        tools=TOOL_DEFINITIONS
+        tools=TOOL_DEFINITIONS,
+        previous_response_id=state["previous_response_id"],
     )
 
     if not message.get("tool_calls"):
+
         return {
             "messages": [message],
             "final_answer": message["content"],
             "iterations": state["iterations"] + 1,
+            "previous_response_id": message["response_id"],
         }
 
     return {
         "messages": [message],
         "iterations": state["iterations"] + 1,
+        "previous_response_id": message["response_id"],
     }
-
 
 def tools_node(state: AgentGraphState):
     messages = []
@@ -130,7 +135,8 @@ if __name__ == "__main__":
         ],
         "tool_results": [],
         "final_answer": None,
-        "iterations": 0
+        "iterations": 0,
+        "previous_response_id": None,
     }
 
     result = graph.invoke(initial_state)
