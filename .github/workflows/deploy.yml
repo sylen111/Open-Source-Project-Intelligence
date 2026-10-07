@@ -34,7 +34,7 @@ jobs:
 
           set -e
 
-          cd ~/open-source-project-intelligence
+          cd ~/Open-Source-Project-Intelligence
 
           echo "Updating production code..."
           git checkout main
