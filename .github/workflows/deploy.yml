@@ -1,6 +1,9 @@
 name: Deploy to AWS
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -10,21 +13,15 @@ jobs:
     steps:
       - name: Configure SSH
         env:
-            EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
-            EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
         run: |
-            mkdir -p ~/.ssh
+          mkdir -p ~/.ssh
+          printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/ec2_key
+          chmod 600 ~/.ssh/ec2_key
+          ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
 
-            printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/ec2_key
-            chmod 600 ~/.ssh/ec2_key
-
-            echo "Checking SSH key..."
-            ssh-keygen -y -f ~/.ssh/ec2_key > ~/.ssh/ec2_key.pub
-            ssh-keygen -lf ~/.ssh/ec2_key.pub
-
-            ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
-            
-      - name: Test SSH connection
+      - name: Deploy to EC2
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USER: ${{ secrets.EC2_USER }}
@@ -33,5 +30,35 @@ jobs:
             -i ~/.ssh/ec2_key \
             -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes \
-            "$EC2_USER@$EC2_HOST" \
-            "echo 'SSH connection successful'; hostname; whoami; docker --version"
+            "$EC2_USER@$EC2_HOST" 'bash -s' <<'EOF'
+
+          set -e
+
+          cd ~/open-source-project-intelligence
+
+          echo "Updating production code..."
+          git checkout main
+          git pull --ff-only origin main
+
+          echo "Loading production secrets..."
+          SECRET_JSON=$(aws secretsmanager get-secret-value \
+            --secret-id "open-source-project/production" \
+            --query SecretString \
+            --output text)
+
+          export OPENAI_API_KEY=$(printf '%s' "$SECRET_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin)['OPENAI_API_KEY'])")
+          export GITHUB_TOKEN=$(printf '%s' "$SECRET_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin)['GITHUB_TOKEN'])")
+          export DB_PASSWORD=$(printf '%s' "$SECRET_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin)['DB_PASSWORD'])")
+
+          unset SECRET_JSON
+
+          echo "Building Docker images..."
+          docker compose build
+
+          echo "Starting services..."
+          docker compose up -d
+
+          echo "Deployment status:"
+          docker compose ps
+
+          EOF
